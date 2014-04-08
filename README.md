@@ -1,17 +1,17 @@
 dualdb
 ======
 
-How to Get Started?
+##How to Get Started?
 
 1. Craete a new virtual environment for dependencies management.
 2. Install dependencies specified in requirements.txt. 
 3. Syncdb. (We should rather use south).
-> python manage.py syncdb
-> python manage.py syncdb --database inventory
-> python manage.py syncdb --database transactions
+*    python manage.py syncdb
+*    python manage.py syncdb --database inventory
+*    python manage.py syncdb --database transactions
 4. Run tests. Python manage.py test core
 
-How to explore?
+##How to explore?
 
 Run the development server and point your browser to v1 version of our APIs. /v1/. This should list all the available service end=points.
 
