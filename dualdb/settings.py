@@ -181,3 +181,7 @@ LOGGING = {
 DATABASE_ROUTERS = ["dualdb.core.routers.ModelRouter"]
 
 TASTYPIE_ALLOW_MISSING_SLASH = True
+
+FIXTURE_DIRS = (
+                    os.path.join(PROJECT_DIR, APP_NAME, "fixtures"),
+                )
