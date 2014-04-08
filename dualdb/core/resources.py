@@ -9,6 +9,7 @@ from tastypie.utils.mime import determine_format
 from dualdb.core.models import Supplier, Customer, Product, Order
 from tastypie.authorization import Authorization
 from dualdb.common.utils import get_pk_filds
+from tastypie import fields
 
 
 class BaseResource(ModelResource):
@@ -69,6 +70,9 @@ class ProductsResource(BaseResource):
     '''
         Represents the API resource for Product entity.
     '''
+    suppliers = fields.ManyToManyField(SuppliersResource,
+                                       attribute="suppliers")
+
     class Meta(BaseResource.Meta):
         '''
             Holds META options for Products resource.
@@ -83,6 +87,8 @@ class OrdersResource(BaseResource):
     '''
         Represents the API resource for Product entity.
     '''
+    customer = fields.ForeignKey(CustomersResource, attribute="customer")
+
     class Meta(BaseResource.Meta):
         '''
             Holds META options for Orders resource.
