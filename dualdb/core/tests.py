@@ -4,6 +4,7 @@ Created on 08-Apr-2014
 @author: Rahul
 '''
 from tastypie.test import ResourceTestCase
+from copy import deepcopy
 
 
 class BaseClient(ResourceTestCase):
@@ -48,9 +49,7 @@ class BaseClient(ResourceTestCase):
         resp = self.get_list(resource_name, api_name, accept_format="xml")
         self.assertHttpOK(resp)
         self.assertValidXMLResponse(resp)
-        data = self.deserialize(resp)
-        self._check_required_response_attributes(data)
-        return data
+        return True
 
     def get_detail(self, resource_name, object_id, api_name, accept_format):
         '''
@@ -133,47 +132,53 @@ class BaseClient(ResourceTestCase):
                                       updated_data):
         '''
             Simulates the end to end update flow.
-            Get the initial count,
-            Create a new instance,
-            Assert total count in list URI,
-            Assert the data matches by making a call to detail URI,
-            Update the newly created instance,
-            Make a detail URI and assert the updated data is available.
+            Update the first object loaded via fixtures to updated data
+            and assert the data matches.
         '''
 
-        initial_count = self._get_list_uri_count(resource_name)
-        res_id = self.create(resource_name, initial_data)
-        updated_count = self._get_list_uri_count(resource_name)
-        self.assertEqual(initial_count + 1, updated_count,
-                                "Count mismatch after creating new instance")
-        res_data = self.get_json_detail(resource_name, object_id=res_id)
-        self._assert_dict_matches(updated_data, res_data)
+        # We get it from fixtures.
+        res_id = "1"
 
         self.update(resource_name, object_id=res_id, data=updated_data)
+
         res_data = self.get_json_detail(resource_name, object_id=res_id)
+
         self._assert_dict_matches(updated_data, res_data)
 
     def assert_end_to_end_delete_flow(self, resource_name, data):
         '''
             Simulates the end to end delete flow.
-            Get the initial count,
-            Create a new instance,
-            Assert total count in list URI,
-            Make a delete call on newly created instance,
-            Assert the new count matches the initial count.
+            Get initial count.
+            Get the data for first object loaded via fixtures through
+            detail API call.
+            Delete the same and make a GET call again, we should get back
+            404 and total_count in LIST URI should be updated.
         '''
-        initial_count = self._get_list_uri_count(resource_name)
-        res_id = self.create(resource_name, data)
-        updated_count = self._get_list_uri_count(resource_name)
-        self.assertEqual(initial_count + 1, updated_count,
-                                "Count mismatch after creating new instance")
 
+        initial_count = self._get_list_uri_count(resource_name)
+
+        #We get it from loading of fixtures.
+        res_id = "1"
         res_data = self.get_json_detail(resource_name, object_id=res_id)
 
         self.delete(resource_name, object_id=res_id)
+
         updated_count = self._get_list_uri_count(resource_name)
-        self.assertEqual(initial_count, updated_count,
+
+        self.assertEqual(initial_count - 1, updated_count,
                                 "Count mismatch after deleting a new instance")
+
+        self.assert_not_found_detail_uri(resource_name, object_id=res_id)
+
+    def assert_not_found_detail_uri(self, resource_name, object_id,
+                                api_name="v1", accept_format="json"):
+        '''
+            Makes a List URI call, and asserts that the response
+            is not found.
+        '''
+        resp = self.get_detail(resource_name, object_id, api_name,
+                               accept_format=accept_format)
+        self.assertHttpNotFound(resp)
 
     def _get_list_uri_count(self, resource_name):
         '''
@@ -196,14 +201,14 @@ class BaseClient(ResourceTestCase):
         '''
             Returns the resource uri for newly posted object.
         '''
-        location = self.get_location(resp)
+        location = self._get_location(resp)
         res_uri = '/%s' % ('/'.join(location[1].split("/")[3:]))
         return res_uri
 
     def _get_location_id(self, resp):
         '''Return resource_id for newly posted object
         '''
-        location_uri = self.get_location_uri(resp)
+        location_uri = self._get_location_uri(resp)
         if location_uri.endswith("/"):
             location_uri = location_uri[:-1]
         res_id = location_uri.split('/')[-1]
@@ -231,6 +236,9 @@ class CustomersTest(BaseClient):
     '''
         Tests basic REST API functionality for customers resource.
     '''
+    multi_db = True
+    fixtures = ["customers.json"]
+
     def setUp(self):
         '''
             Basic Pre-Requisite setup.
@@ -245,7 +253,7 @@ class CustomersTest(BaseClient):
                         "email": "customer@orders.com"
                      }
 
-        self.update = {
+        self.update_data = {
                         "last_name": "surname"
                        }
 
@@ -271,19 +279,17 @@ class CustomersTest(BaseClient):
 
     def test_update(self):
         '''
-            Creates a new instance of customer;
-            Updates the newly created instance;
-            Asserts that the updated changes and reflected.
+            Updates the first object loaded via fixtures;
+            Asserts that the updated changes and reflected in detail call.
         '''
-        updated_data = self.data.update(self.update)
-
+        updated_data = deepcopy(self.data)
+        updated_data.update(self.update_data)
         self.assert_end_to_end_update_flow(self.resource_name,
                         initial_data=self.data, updated_data=updated_data)
 
     def test_delete(self):
         '''
-            Creates a new instance;
-            Makes sure it exists on list URI call;
+            Makes sure it exists on detail URI call;
             Deletes the same;
             and checks the same has been deleted in LIST URI call.
         '''
