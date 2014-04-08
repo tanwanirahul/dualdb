@@ -4,7 +4,6 @@ Created on 08-Apr-2014
 @author: Rahul
 '''
 from tastypie.test import ResourceTestCase
-import json
 
 
 class BaseClient(ResourceTestCase):
@@ -12,7 +11,7 @@ class BaseClient(ResourceTestCase):
         This base class builds the basic infrastructure
         required to run the test cases.
     '''
-    
+
     def get_full_uri(self, api_name, resource_name, *args, **kwargs):
         '''
             Joins all the pieces and returns the URI.
@@ -37,7 +36,9 @@ class BaseClient(ResourceTestCase):
         resp = self.get_list(resource_name, api_name, accept_format="json")
         self.assertHttpOK(resp)
         self.assertValidJSONResponse(resp)
-        return self.deserialize(resp)
+        data = self.deserialize(resp)
+        self._check_required_response_attributes(data)
+        return data
 
     def get_xml_list(self, resource_name, api_name="v1"):
         '''
@@ -47,7 +48,9 @@ class BaseClient(ResourceTestCase):
         resp = self.get_list(resource_name, api_name, accept_format="xml")
         self.assertHttpOK(resp)
         self.assertValidJSONResponse(resp)
-        return self.deserialize(resp)
+        data = self.deserialize(resp)
+        self._check_required_response_attributes(data)
+        return data
 
     def get_detail(self, resource_name, object_id, api_name, accept_format):
         '''
@@ -101,6 +104,15 @@ class BaseClient(ResourceTestCase):
         self.assertHttpAccepted(resp)
         return True
 
+    def delete(self, resource_name, object_id, data, api_name="v1"):
+        '''
+            Simulates a DELETE call on the given resource.
+        '''
+        uri = self.get_full_uri(api_name, resource_name, object_id)
+        resp = self.api_client.delete(uri)
+        self.assertHttpAccepted(resp)
+        return True
+
     def _get_location(self, resp):
         '''
             Returns the value of location header.
@@ -125,3 +137,82 @@ class BaseClient(ResourceTestCase):
             location_uri = location_uri[:-1]
         res_id = location_uri.split('/')[-1]
         return res_id
+
+    def _check_required_response_attributes(self, data):
+        '''
+            Given the response data, checks if data and meta attributes
+            are present.
+        '''
+        self.assertIn("data", data, "Missing data attribute in List response")
+        self.assertIn("meta", data, "Missing meta attribute in List response")
+
+    def _assert_dict_matches(self, expected, under_test):
+        '''
+            Given expected and under_test dict, asserts if the former is subset
+            of the later.
+        '''
+        for key, value in expected.items():
+            self.assertEqual(under_test.get(key), value,
+                             "Mismatch for key : {0}".format(key))
+
+
+class CustomersTest(BaseClient):
+    '''
+        Tests basic REST API functionality for customers resource.
+    '''
+    def setUp(self):
+        '''
+            Basic Pre-Requisite setup.
+        '''
+        self.resource_name = "customers"
+        self.data = {
+                        "username": "customer1",
+                        "first_name": "customer",
+                        "password": "secret",
+                        "last_name": "family_name",
+                        "email": "customer@orders.com"
+                     }
+
+        self.update = {
+                        "last_name": "surname"
+                       }
+
+    def test_get_json_list(self):
+        '''
+            Tests if the List URI with JSON data is working.
+        '''
+        self.get_json_list(self.resource_name)
+
+    def test_get_xml_list(self):
+        '''
+            Tests if the List URI with JSON data is working.
+        '''
+        self.get_xml_list(self.resource_name)
+
+    def test_create(self):
+        '''
+            Creates new instance of customers
+            and makes a detail URI call on new id
+            also assert total_count increased.
+        '''
+        self._assert_end_to_end_create_flow(self.resource_name, self.data)
+
+    def test_update(self):
+        '''
+            Creates a new instance of customer;
+            Updates the newly created instance;
+            Asserts that the updated changes and reflected.
+        '''
+        updated_data = self.data.update(self.update)
+
+        self._assert_end_to_end_update_flow(self.resource_name,
+                        initial_data=self.data, updated_data=updated_data)
+
+    def test_delete(self):
+        '''
+            Creates a new instance;
+            Makes sure it exists on list URI call;
+            Deletes the same;
+            and checks the same has been deleted in LIST URI call.
+        '''
+        self._assert_end_to_end_delete_flow(self.resource_name, self.data)
