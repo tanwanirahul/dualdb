@@ -1,0 +1,5 @@
+Django==1.5.1
+PyYAML==3.10
+defusedxml==0.4.1
+django-tastypie==0.9.14
+lxml==3.2.0
