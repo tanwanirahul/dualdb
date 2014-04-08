@@ -294,3 +294,67 @@ class CustomersTest(BaseClient):
             and checks the same has been deleted in LIST URI call.
         '''
         self.assert_end_to_end_delete_flow(self.resource_name, self.data)
+
+
+class SuppliersTest(BaseClient):
+    '''
+        Tests basic REST API functionality for customers resource.
+    '''
+    multi_db = True
+    fixtures = ["suppliers.json"]
+
+    def setUp(self):
+        '''
+            Basic Pre-Requisite setup.
+        '''
+        super(SuppliersTest, self).setUp()
+        self.resource_name = "suppliers"
+        self.data = {
+                        "username": "supplier1",
+                        "first_name": "supplier",
+                        "password": "secret",
+                        "last_name": "family_name",
+                        "email": "supplier@products.com"
+                     }
+
+        self.update_data = {
+                        "last_name": "surname"
+                       }
+
+    def test_get_json_list(self):
+        '''
+            Tests if the List URI with JSON data is working.
+        '''
+        self.get_json_list(self.resource_name)
+
+    def test_get_xml_list(self):
+        '''
+            Tests if the List URI with JSON data is working.
+        '''
+        self.get_xml_list(self.resource_name)
+
+    def test_create(self):
+        '''
+            Creates new instance of customers
+            and makes a detail URI call on new id
+            also assert total_count increased.
+        '''
+        self.assert_end_to_end_create_flow(self.resource_name, self.data)
+
+    def test_update(self):
+        '''
+            Updates the first object loaded via fixtures;
+            Asserts that the updated changes and reflected in detail call.
+        '''
+        updated_data = deepcopy(self.data)
+        updated_data.update(self.update_data)
+        self.assert_end_to_end_update_flow(self.resource_name,
+                        initial_data=self.data, updated_data=updated_data)
+
+    def test_delete(self):
+        '''
+            Makes sure it exists on detail URI call;
+            Deletes the same;
+            and checks the same has been deleted in LIST URI call.
+        '''
+        self.assert_end_to_end_delete_flow(self.resource_name, self.data)
