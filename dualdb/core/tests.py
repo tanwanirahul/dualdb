@@ -16,7 +16,7 @@ class BaseClient(ResourceTestCase):
         '''
             Joins all the pieces and returns the URI.
         '''
-        bits = [api_name, resource_name]
+        bits = ['', api_name, resource_name]
         bits.extend(args)
         return '/'.join(bits)
 
@@ -47,7 +47,7 @@ class BaseClient(ResourceTestCase):
         '''
         resp = self.get_list(resource_name, api_name, accept_format="xml")
         self.assertHttpOK(resp)
-        self.assertValidJSONResponse(resp)
+        self.assertValidXMLResponse(resp)
         data = self.deserialize(resp)
         self._check_required_response_attributes(data)
         return data
@@ -84,7 +84,7 @@ class BaseClient(ResourceTestCase):
         return self.deserialize(resp)
 
     def create(self, resource_name, data, api_name="v1",
-               content_type="application/json"):
+               content_type="json"):
         '''
             Makes a POST call on the given resource to create a new instance
             and returns the resource id of the same.
@@ -95,7 +95,7 @@ class BaseClient(ResourceTestCase):
         return self._get_location_id(resp)
 
     def update(self, resource_name, object_id, data, api_name="v1",
-               content_type="application/json"):
+               content_type="json"):
         '''
             Simulates a PUT call on the given resource to update the data.
         '''
@@ -104,7 +104,7 @@ class BaseClient(ResourceTestCase):
         self.assertHttpAccepted(resp)
         return True
 
-    def delete(self, resource_name, object_id, data, api_name="v1"):
+    def delete(self, resource_name, object_id, api_name="v1"):
         '''
             Simulates a DELETE call on the given resource.
         '''
@@ -112,6 +112,77 @@ class BaseClient(ResourceTestCase):
         resp = self.api_client.delete(uri)
         self.assertHttpAccepted(resp)
         return True
+
+    def assert_end_to_end_create_flow(self, resource_name, data):
+        '''
+            Simulates the end to end create flow.
+            Get the initial count,
+            Create a new instance,
+            Assert total count in list URI,
+            Make a detail URI and assert the same data is available.
+        '''
+        initial_count = self._get_list_uri_count(resource_name)
+        res_id = self.create(resource_name, data)
+        updated_count = self._get_list_uri_count(resource_name)
+        self.assertEqual(initial_count + 1, updated_count,
+                                "Count mismatch after creating new instance")
+        res_data = self.get_json_detail(resource_name, object_id=res_id)
+        self._assert_dict_matches(data, res_data)
+
+    def assert_end_to_end_update_flow(self, resource_name, initial_data,
+                                      updated_data):
+        '''
+            Simulates the end to end update flow.
+            Get the initial count,
+            Create a new instance,
+            Assert total count in list URI,
+            Assert the data matches by making a call to detail URI,
+            Update the newly created instance,
+            Make a detail URI and assert the updated data is available.
+        '''
+
+        initial_count = self._get_list_uri_count(resource_name)
+        res_id = self.create(resource_name, initial_data)
+        updated_count = self._get_list_uri_count(resource_name)
+        self.assertEqual(initial_count + 1, updated_count,
+                                "Count mismatch after creating new instance")
+        res_data = self.get_json_detail(resource_name, object_id=res_id)
+        self._assert_dict_matches(updated_data, res_data)
+
+        self.update(resource_name, object_id=res_id, data=updated_data)
+        res_data = self.get_json_detail(resource_name, object_id=res_id)
+        self._assert_dict_matches(updated_data, res_data)
+
+    def assert_end_to_end_delete_flow(self, resource_name, data):
+        '''
+            Simulates the end to end delete flow.
+            Get the initial count,
+            Create a new instance,
+            Assert total count in list URI,
+            Make a delete call on newly created instance,
+            Assert the new count matches the initial count.
+        '''
+        initial_count = self._get_list_uri_count(resource_name)
+        res_id = self.create(resource_name, data)
+        updated_count = self._get_list_uri_count(resource_name)
+        self.assertEqual(initial_count + 1, updated_count,
+                                "Count mismatch after creating new instance")
+
+        res_data = self.get_json_detail(resource_name, object_id=res_id)
+
+        self.delete(resource_name, object_id=res_id)
+        updated_count = self._get_list_uri_count(resource_name)
+        self.assertEqual(initial_count, updated_count,
+                                "Count mismatch after deleting a new instance")
+
+    def _get_list_uri_count(self, resource_name):
+        '''
+            Makes a LIST URI call for this resource and returns the total
+            count.
+        '''
+        list_data = self.get_json_list(resource_name)
+        total_count = list_data["meta"]["total_count"]
+        return total_count
 
     def _get_location(self, resp):
         '''
@@ -164,6 +235,7 @@ class CustomersTest(BaseClient):
         '''
             Basic Pre-Requisite setup.
         '''
+        super(CustomersTest, self).setUp()
         self.resource_name = "customers"
         self.data = {
                         "username": "customer1",
@@ -195,7 +267,7 @@ class CustomersTest(BaseClient):
             and makes a detail URI call on new id
             also assert total_count increased.
         '''
-        self._assert_end_to_end_create_flow(self.resource_name, self.data)
+        self.assert_end_to_end_create_flow(self.resource_name, self.data)
 
     def test_update(self):
         '''
@@ -205,7 +277,7 @@ class CustomersTest(BaseClient):
         '''
         updated_data = self.data.update(self.update)
 
-        self._assert_end_to_end_update_flow(self.resource_name,
+        self.assert_end_to_end_update_flow(self.resource_name,
                         initial_data=self.data, updated_data=updated_data)
 
     def test_delete(self):
@@ -215,4 +287,4 @@ class CustomersTest(BaseClient):
             Deletes the same;
             and checks the same has been deleted in LIST URI call.
         '''
-        self._assert_end_to_end_delete_flow(self.resource_name, self.data)
+        self.assert_end_to_end_delete_flow(self.resource_name, self.data)
