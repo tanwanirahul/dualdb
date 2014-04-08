@@ -46,8 +46,8 @@ class Product(models.Model):
         Represents our Product entity.
     '''
     title = models.CharField(max_length=30)
-    amount = models.FloatField()
-    sotck = models.IntegerField()
+    price = models.FloatField()
+    stock = models.IntegerField()
     suppliers = models.ManyToManyField(Supplier)
 
     class Meta(object):
