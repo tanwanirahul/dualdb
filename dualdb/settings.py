@@ -180,4 +180,4 @@ LOGGING = {
 
 DATABASE_ROUTERS = ["dualdb.core.routers.ModelRouter"]
 
-ALLOW_MISSING_SLASH = True
+TASTYPIE_ALLOW_MISSING_SLASH = True
