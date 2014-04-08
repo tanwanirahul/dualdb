@@ -27,8 +27,6 @@ class ModelRouter(object):
         '''
             Returns if the model needs to be synchronized for this db.
         '''
-        print "This is called for model", model
-        print "App label is ", model._meta.app_label
         if not db == "default":
             return db == self._get_db(model)
         return None
