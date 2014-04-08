@@ -49,6 +49,37 @@ class BaseClient(ResourceTestCase):
         self.assertValidJSONResponse(resp)
         return self.deserialize(resp)
 
+    def get_detail(self, resource_name, object_id, api_name, accept_format):
+        '''
+            Given the resource name and object id, makes a PUT call
+            on detail URI to update the data.
+        '''
+        uri = self.get_full_uri(api_name, resource_name, object_id)
+        resp = self.api_client.get(uri, format=accept_format)
+        return resp
+
+    def get_json_detail(self, resource_name, object_id, api_name="v1"):
+        '''
+            Expects the valid JSON data for detail URI call on
+            the given resource.
+        '''
+        resp = self.get_detail(resource_name, object_id, api_name,
+                               accept_format="json")
+        self.assertHttpOK(resp)
+        self.assertValidJSONResponse(resp)
+        return self.deserialize(resp)
+
+    def get_xml_detail(self, resource_name, object_id, api_name="v1"):
+        '''
+            Expects the valid JSON data for detail URI call on
+            the given resource.
+        '''
+        resp = self.get_detail(resource_name, object_id, api_name,
+                               accept_format="xml")
+        self.assertHttpOK(resp)
+        self.assertValidXMLResponse(resp)
+        return self.deserialize(resp)
+
     def create(self, resource_name, data, api_name="v1",
                content_type="application/json"):
         '''
@@ -59,6 +90,16 @@ class BaseClient(ResourceTestCase):
         resp = self.api_client.post(uri, format=content_type, data=data)
         self.assertHttpCreated(resp)
         return self._get_location_id(resp)
+
+    def update(self, resource_name, object_id, data, api_name="v1",
+               content_type="application/json"):
+        '''
+            Simulates a PUT call on the given resource to update the data.
+        '''
+        uri = self.get_full_uri(api_name, resource_name, object_id)
+        resp = self.api_client.put(uri, format=content_type, data=data)
+        self.assertHttpAccepted(resp)
+        return True
 
     def _get_location(self, resp):
         '''
