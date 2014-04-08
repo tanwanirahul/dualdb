@@ -4,8 +4,8 @@
     "pk": 1,
     "fields": {
       "title": "product1",
-      "amount": 100.1,
-      "sotck": 7,
+      "price": 100.1,
+      "stock": 7,
       "suppliers" : [1,2]
     }
   },
@@ -14,8 +14,8 @@
     "pk": 1,
     "fields": {
       "title": "product2",
-      "amount": 11.9,
-      "sotck": 17,
+      "price": 11.9,
+      "stock": 17,
       "suppliers" : [1,2]
     }
   }
