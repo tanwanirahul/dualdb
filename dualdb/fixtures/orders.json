@@ -1,0 +1,20 @@
+[
+  {
+    "model": "core.Order",
+    "pk": 1,
+    "fields": {
+      "amount": 100.1,
+      "date": "2014-04-08",
+      "customer": "1"
+    }
+  },
+  {
+    "model": "core.Order",
+    "pk": 2,
+    "fields": {
+      "amount": 17.9,
+      "date": "2014-04-08",
+      "customer": "1"
+    }
+  }
+]

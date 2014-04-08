@@ -1,0 +1,20 @@
+[
+  {
+    "model": "core.Customer",
+    "pk": 1,
+    "fields": {
+      "username": "johnlennon",
+      "first_name": "John",
+      "last_name": "Lennon"
+    }
+  },
+  {
+    "model": "core.Customer",
+    "pk": 2,
+    "fields": {
+      "username": "johndoe",
+      "first_name": "John",
+      "last_name": "Doe"
+    }
+  }
+]

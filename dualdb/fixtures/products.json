@@ -1,0 +1,22 @@
+[
+  {
+    "model": "core.Product",
+    "pk": 1,
+    "fields": {
+      "title": "product1",
+      "amount": 100.1,
+      "sotck": 7,
+      "suppliers" : [1,2]
+    }
+  },
+  {
+    "model": "core.Product",
+    "pk": 1,
+    "fields": {
+      "title": "product2",
+      "amount": 11.9,
+      "sotck": 17,
+      "suppliers" : [1,2]
+    }
+  }
+]
